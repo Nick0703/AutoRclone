@@ -103,13 +103,19 @@ def parse_args():
                         help='for test: make rclone dry-run.')
 
     parser.add_argument('--disable_list_r', action="store_true",
-                        help='for debug. do not use this.')
+                        help='for debug: do not use this.')
 
     parser.add_argument('--crypt', action="store_true",
                         help='for test: crypt remote destination.')
 
     parser.add_argument('--cache', action="store_true",
-                        help="for test: cache the remote destination.")
+                        help='for test: cache the remote destination.')
+
+    parser.add_argument('--sync', action="store_true",
+						help='use sync instead of copy.')
+
+    parser.add_argument('--log', action="store_true",
+                        help='for debug: enable logging.')
 
     args = parser.parse_args()
     return args
@@ -297,17 +303,20 @@ def main():
             check_path(dst_full_path)
 
         # =================cmd to run=================
-        #rclone_cmd = "rclone --config {} copy ".format(config_file)
-        rclone_cmd = "rclone --config {} sync ".format(config_file)
+        if args.sync:
+            rclone_cmd = "rclone --config {} sync --no-update-modtime ".format(config_file)
+        else:
+            rclone_cmd = "rclone --config {} copy ".format(config_file)
         if args.dry_run:
             rclone_cmd += "--dry-run "
         # --fast-list is default adopted in the latest rclone
-        rclone_cmd += "--drive-server-side-across-configs --rc --rc-addr=\"localhost:{}\" -vv --ignore-existing --no-update-modtime ".format(args.port)
+        rclone_cmd += "--drive-server-side-across-configs --rc --rc-addr=\"localhost:{}\" --ignore-existing ".format(args.port)
         rclone_cmd += "--tpslimit {} --transfers {} --drive-chunk-size 32M ".format(TPSLIMIT, TRANSFERS)
         if args.disable_list_r:
             rclone_cmd += "--disable ListR "
-        rclone_cmd += "--drive-acknowledge-abuse --log-file={} \"{}\" \"{}\"".format(logfile, src_full_path,
-                                                                                     dst_full_path)
+        if args.log:
+            rclone_cmd += "-vv --log-file={} ".format(logfile)
+        rclone_cmd += "--drive-acknowledge-abuse {} {}".format(src_full_path, dst_full_path)
 
         if not is_windows():
             rclone_cmd = rclone_cmd + " &"
