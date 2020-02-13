@@ -117,6 +117,9 @@ def parse_args():
     parser.add_argument('--log', action="store_true",
                         help='for debug: enable logging.')
 
+    parser.add_argument('--log_d', action="store_true",
+                        help='for debug: enable detailed logging.')
+
     args = parser.parse_args()
     return args
 
@@ -304,17 +307,19 @@ def main():
 
         # =================cmd to run=================
         if args.sync:
-            rclone_cmd = "rclone --config {} sync --no-update-modtime ".format(config_file)
+            rclone_cmd = "rclone --config {} sync --no-update-modtime -c ".format(config_file)
         else:
-            rclone_cmd = "rclone --config {} copy ".format(config_file)
+            rclone_cmd = "rclone --config {} copy --ignore-existing ".format(config_file)
         if args.dry_run:
             rclone_cmd += "--dry-run "
         # --fast-list is default adopted in the latest rclone
-        rclone_cmd += "--drive-server-side-across-configs --rc --rc-addr=\"localhost:{}\" --ignore-existing ".format(args.port)
+        rclone_cmd += "--drive-server-side-across-configs --rc --rc-addr=\"localhost:{}\" ".format(args.port)
         rclone_cmd += "--tpslimit {} --transfers {} --drive-chunk-size 32M ".format(TPSLIMIT, TRANSFERS)
         if args.disable_list_r:
             rclone_cmd += "--disable ListR "
         if args.log:
+            rclone_cmd += "-v --log-file={} ".format(logfile)
+        elif args.log_d:
             rclone_cmd += "-vv --log-file={} ".format(logfile)
         rclone_cmd += "--drive-acknowledge-abuse {} {}".format(src_full_path, dst_full_path)
 
